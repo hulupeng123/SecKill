@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seckill.web.dao.SuccessKilledDao">
+    <!-- 对dao接口进行映射，实现sql语句配置 -->
+    <insert id="insertSuccessKilled" parameterType="java.lang.Long" statementType="PREPARED">
+        <!--当出现主键冲突时(即重复秒杀时)，会报错;不想让程序报错，加入ignore-->
+        INSERT ignore INTO success_killed(seckill_id,user_phone,state)
+        VALUES (#{secKillId},#{userPhone},0)
+    </insert>
+    <!--通过秒杀商品的id和用户的手机号实现秒杀功能
+        SuccessKilled里面有两种seckill_id，
+        一种是SuccessKilled本身的对象的seckill_id，
+        另一种是SuccessKilled里面定义的其他类（这里是Seckill）的seckill_id，
+        若是使用非本身类的替换名，必须在后面加上这个"seckill.seckill_id"
+     -->
+    <select id="queryByIdWithPhone" parameterType="java.lang.Long" statementType="PREPARED"
+            resultType="com.seckill.web.model.SuccessKilled">
+        SELECT
+            sk.seckill_id,
+            sk.user_phone,
+            sk.create_time,
+            sk.state,
+            s.seckill_id "seckill.seckill_id",
+            s.name "seckill.name",
+            s.number "seckill.number",
+            s.start_time "seckill.start_time",
+            s.end_time "seckill.end_time",
+            s.create_time "seckill.create_time"
+        FROM success_killed sk
+        INNER JOIN seckill s ON sk.seckill_id=s.seckill_id
+        WHERE sk.seckill_id=#{secKillId} and sk.user_phone=#{userPhone}
+    </select>
+</mapper>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seckill.web.dao.SecKillDao">
+    <!-- 对dao接口进行映射，实现sql语句配置 -->
+    <sql id="select_column">
+        seckill_id AS secKillId,name,number,start_time As startTime,end_time As endTime,create_time AS createTime
+    </sql>
+    <!-- 通过id查询数据 -->
+    <select id="queryById" parameterType="java.lang.Long" statementType="PREPARED"
+            resultType="com.seckill.web.model.SecKill">
+        select
+        <include refid="select_column"/>
+        from seckill
+        where seckill_id=#{seckillId}
+    </select>
+    <!-- 查询秒杀所有的数据 -->
+    <select id="queryAll" statementType="PREPARED" resultType="com.seckill.web.model.SecKill">
+        select
+        <include refid="select_column"/>
+        from seckill
+        order by create_time desc
+        limit #{offset},#{limit}
+    </select>
+    <!-- 减库存 -->
+    <update id="reduceNumber">
+        UPDATE seckill
+        SET number = number-1
+        WHERE seckill_id=#{secKillId}
+        AND start_time <![CDATA[ <= ]]> #{killTime}
+        AND end_time >= #{killTime}
+        AND number > 0;
+    </update>
+    <!-- 调用存储过程，实现减库存，添加数据到秒杀成功表里 -->
+    <select id="killByProcedure" statementType="CALLABLE">
+        call execute_seckilled(
+          #{secKillId,jdbcType=BIGINT,mode=IN},
+          #{userPhone,jdbcType=BIGINT,mode=IN},
+          #{killTime,jdbcType=TIMESTAMP,mode=IN},
+          #{result,jdbcType=INTEGER,mode=OUT}
+        )
+    </select>
+</mapper>
